@@ -1,0 +1,11 @@
+{
+  "name": "rbi-circular-radar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pipeline logic for RBI Circular Radar: feed parsing, Id dedupe, gap check, rule-based relevance scoring.",
+  "scripts": {
+    "test": "node --test radar.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
