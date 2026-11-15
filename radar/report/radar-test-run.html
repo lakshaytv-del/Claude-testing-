@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar Test Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* Layout: one 960px reading column; verdict strip, then findings, then score ledger, then test list. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --ink: #18202b; --muted: #5b6676; --line: #dde2e9;
+  --accent: #1f5f8b; --pass: #1d7a4c; --pass-bg: #e3f3ea; --warn: #9a5b00; --warn-bg: #fdf0d8;
+  --fail: #b3261e; --bar: #9fb4c8; --bar-alert: #1f5f8b;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cond: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11161d; --surface: #18202a; --ink: #e4e9ef; --muted: #98a3b3; --line: #2a3441;
+  --accent: #7db7e0; --pass: #6fd29d; --pass-bg: #163326; --warn: #f0b85c; --warn-bg: #3a2c12;
+  --fail: #ff8a80; --bar: #4a5d72; --bar-alert: #7db7e0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11161d; --surface: #18202a; --ink: #e4e9ef; --muted: #98a3b3; --line: #2a3441;
+  --accent: #7db7e0; --pass: #6fd29d; --pass-bg: #163326; --warn: #f0b85c; --warn-bg: #3a2c12;
+  --fail: #ff8a80; --bar: #4a5d72; --bar-alert: #7db7e0; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 960px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2 { font-family: var(--cond); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: .005em }
+h1 { font-size: 34px; line-height: 1.15 }
+h2 { font-size: 21px }
+p { margin: 0; max-width: 68ch }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.mono { font-family: var(--mono); font-size: 13px }
+.muted { color: var(--muted) }
+section { display: grid; gap: 14px; min-width: 0 }
+
+header { display: grid; gap: 12px }
+.verdict { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; padding: 18px 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px }
+.verdict .big { font: 600 40px/1 var(--cond); color: var(--pass); font-variant-numeric: tabular-nums }
+.verdict dl { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0 }
+.verdict dt { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.verdict dd { margin: 4px 0 0; font: 500 15px/1.2 var(--mono); font-variant-numeric: tabular-nums }
+
+.callout { padding: 14px 16px; border-radius: 6px; background: var(--warn-bg); color: var(--ink);
+  border-left: 4px solid var(--warn); display: grid; gap: 6px }
+.callout strong { color: var(--warn) }
+
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0 }
+.tag { justify-self: start; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  padding: 5px 8px; border-radius: 3px }
+.tag.fixed { background: var(--pass-bg); color: var(--pass) }
+.tag.open { background: var(--warn-bg); color: var(--warn) }
+.tag.untested { background: var(--line); color: var(--muted) }
+.finding h3 { margin: 0; font: 600 16px/1.3 var(--sans) }
+
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-variant-numeric: tabular-nums }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+tr:last-child td { border-bottom: 0 }
+th { font: 500 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg) }
+td.id { font-family: var(--mono); font-size: 13px; white-space: nowrap }
+td.title { min-width: 220px }
+td.title small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px }
+td.calc { font-family: var(--mono); font-size: 13px; white-space: nowrap; color: var(--muted) }
+td.calc b { color: var(--ink); font-weight: 500 }
+.bar { position: relative; width: 110px; height: 18px; background: var(--bg); border-radius: 2px }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--bar); border-radius: 2px }
+.bar.alert i { background: var(--bar-alert) }
+.bar::after { content: ""; position: absolute; left: 60%; top: -3px; bottom: -3px; border-left: 2px dashed var(--fail) }
+.bar span { position: absolute; left: calc(100% + 8px); top: 0; font: 500 13px/18px var(--mono) }
+td.barcell { padding-right: 48px }
+.prov { font: 500 11px/1 var(--mono); padding: 4px 6px; border-radius: 3px; white-space: nowrap; display: inline-block }
+.prov.spec { background: var(--pass-bg); color: var(--pass) }
+.prov.stand { background: var(--line); color: var(--muted) }
+.prov.synth { background: var(--warn-bg); color: var(--warn) }
+.pill { font: 500 11px/1 var(--mono); padding: 4px 7px; border-radius: 10px; white-space: nowrap }
+.pill.alert { background: var(--accent); color: var(--surface) }
+.pill.skip { border: 1px solid var(--line); color: var(--muted) }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); align-items: center }
+.legend .thr { display: inline-block; width: 14px; border-top: 2px dashed var(--fail); vertical-align: middle; margin-right: 6px }
+
+ol.tests { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 6px }
+ol.tests li { display: grid; grid-template-columns: 2.2em 3.2em 1fr auto; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); align-items: baseline }
+ol.tests li:last-child { border-bottom: 0 }
+ol.tests .n { font: 500 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
+ol.tests .ok { font: 600 12px var(--mono); color: var(--pass) }
+ol.tests .bad { font: 600 12px var(--mono); color: var(--fail) }
+ol.tests .ms { font: 400 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
+ol.tests .name { min-width: 0 }
+pre { margin: 0; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  font: 13px/1.5 var(--mono); overflow-x: auto; color: var(--ink) }
+a { color: var(--accent) }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+@media (max-width: 520px) {
+  h1 { font-size: 27px }
+  ol.tests li { grid-template-columns: 2em 3em 1fr; }
+  ol.tests .ms { display: none }
+}
+.callout.good { background: var(--pass-bg); border-left-color: var(--pass) }
+.callout.good strong { color: var(--pass) }
+ul.facts { margin: 0; padding-left: 1.2em; display: grid; gap: 4px }
+td.ref { font-family: var(--mono); font-size: 12px; word-break: break-all; min-width: 110px; color: var(--muted) }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">RBI Circular Radar · live test on rbi.org.in · 15 Nov 2026</div>
+    <h1>Tested on the real RBI site: 15 of 15 pass after four fixes</h1>
+    <p class="muted">The pipeline code ran against RBI's live Notifications RSS feed, the listing page and three circular pages, fetched on 15 Nov 2026 and saved as test snapshots. Branch <span class="mono">claude/rbi-feed-spec-validation-xtrln0</span>. No Claude API calls were made.</p>
+    <div class="verdict">
+      <div class="big" id="passcount">15 / 15</div>
+      <dl>
+        <div><dt>Failed</dt><dd id="failcount">0</dd></div>
+        <div><dt>Run time</dt><dd id="runtime">—</dd></div>
+        <div><dt>Feed items</dt><dd>10 (Ids 13743–13752)</dd></div>
+        <div><dt>Alerts today</dt><dd>0 at threshold 60</dd></div>
+        <div><dt>Commit</dt><dd>7dfffb5</dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <div class="callout good" role="note">
+    <strong>This run uses real RBI data</strong>
+    <p>The stand-in fixture is gone. Every feed item, addressee, reference number and score below comes from pages fetched from rbi.org.in. The only made-up item is one test circular that must alert, and it is labelled.</p>
+  </div>
+
+  <section>
+    <h2>What the live site showed</h2>
+    <div class="findings">
+      <article class="finding">
+        <span class="tag fixed">Fixed in code</span>
+        <h3>Four parsing bugs the stand-ins hid</h3>
+        <ul class="facts">
+          <li><b>Addressee</b> is a multi-line block between the date and “Madam / Dear Sir”, often “The Chairpersons/ CEOs of …”. The code read only one line, so the UAPA circulars lost their NBFC addressee and scored 4.</li>
+          <li><b>Encoded characters</b> such as <span class="mono">&amp;rsquo;</span> and <span class="mono">&amp;ndash;</span> were left in the text.</li>
+          <li><b>Reference numbers</b> can include a department code (<span class="mono">RBI/DPSS/2026-27/476</span>). The code picked up a 2019 reference from further down the body.</li>
+          <li><b>“Applicability”</b> first appears in the table of contents. The code now reads the paragraph itself.</li>
+        </ul>
+      </article>
+      <article class="finding">
+        <span class="tag open">Doc needs correcting</span>
+        <h3>Three claims in the test results don't hold</h3>
+        <ul class="facts">
+          <li>The highest live score is <b>35</b> (the three UAPA updates), not 14. Nothing alerts either way.</li>
+          <li>Checking the title isn't enough for backfill. Ids 13742 and 13748 are different circulars (refs /296 and /302) with <b>identical titles</b>. The check now requires the PDF link to match as well.</li>
+          <li>Fetching a circular by Id <b>worked</b> today: Id 13748 returned its own circular. The earlier wrong-circular result didn't happen again.</li>
+        </ul>
+      </article>
+      <article class="finding">
+        <span class="tag open">Design limit</span>
+        <h3>Backfill only reaches 3 Ids</h3>
+        <p>The listing page shows 13 rows (Ids 13740–13752), only 3 more than the feed. A gap of more than 3 needs the month-by-month archive. The publish date and the date printed on a circular can also differ: Id 13746 is dated 26 Oct but published 27 Oct.</p>
+      </article>
+      <article class="finding">
+        <span class="tag fixed">Confirmed</span>
+        <h3>What held up</h3>
+        <ul class="facts">
+          <li>Ids are contiguous, and a re-run finds 0 new items.</li>
+          <li>Id 13744 (17:30) is stamped later than 13745 (17:10), so tracking by Id is right.</li>
+          <li>3 of 10 items have no addressee: two amendment directions and a FEMA notification.</li>
+          <li>The real Digital Lending Directions score 96 and alert, with scope read from para 3.</li>
+        </ul>
+      </article>
+      <article class="finding">
+        <span class="tag untested">Not tested</span>
+        <h3>Claude scorer and explainer</h3>
+        <p>The scorer and explainer calls on the 60-circular test set need an Anthropic API key.</p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Scores: today's 10 feed items</h2>
+    <p class="muted">Score = applicability × topic weight × severity, rounded and capped at 100. An item alerts at 60 or above, or when a title keyword rule fires. Newest first.</p>
+    <div class="legend"><span><span class="thr"></span>Alert threshold 60</span></div>
+    <div class="scroll"><table id="live"><thead><tr><th>Id</th><th>Circular and addressee</th><th>Applicability × weight × severity</th><th>Score</th><th>Result</th><th>RBI ref</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Circulars that must alert</h2>
+    <div class="scroll"><table id="ctrl"><thead><tr><th>Id</th><th>Circular and addressee</th><th>Applicability × weight × severity</th><th>Score</th><th>Result</th><th>RBI ref</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Test results</h2>
+    <ol class="tests" id="tests"></ol>
+  </section>
+
+  <section>
+    <h2>Run it yourself</h2>
+    <pre>cd radar
+npm test                                      # 15 tests on the saved RBI snapshots
+NODE_USE_ENV_PROXY=1 node live-check.mjs      # fetch rbi.org.in now and score today's feed
+                                              # (the env var is only needed behind a proxy)</pre>
+  </section>
+</div>
+
+<script id="data" type="application/json">{"tests": [{"ok": true, "name": "live feed: 10 items, contiguous Ids 13743\u201313752, IST dates, refs with dept infix", "ms": 1.730771}, {"ok": true, "name": "rbi_id extraction handles &amp;, raw &, Scripts/scripts and junk", "ms": 0.370368}, {"ok": true, "name": "dedupe: second run on the live feed finds 0 new items", "ms": 0.261848}, {"ok": true, "name": "watermark is the Id, not pubDate: live 13744 (17:30) is stamped after 13745 (17:10)", "ms": 0.183794}, {"ok": true, "name": "gap check lists Ids that fell out of the 10-item feed", "ms": 0.153702}, {"ok": true, "name": "listing page: 13 rows (Ids 13740\u201313752), each with date and PDF; covers a gap of up to 3", "ms": 0.476445}, {"ok": true, "name": "backfill: a title match accepts the wrong circular; title + PDF link does not", "ms": 2.684895}, {"ok": true, "name": "addressee is the multi-line block between date and salutation; 3 of 10 have none", "ms": 0.237369}, {"ok": true, "name": "applicability: addressee, then title entity, then the Applicability para (not the index)", "ms": 1.419324}, {"ok": true, "name": "live scores: nothing reaches 60, no hard rule fires, UAPA updates top out at 35", "ms": 2.394863}, {"ok": true, "name": "positive controls: real Digital Lending Directions 96, synthetic RBC amendment 72", "ms": 0.399679}, {"ok": true, "name": "hard rules read the title only: live UAPA bodies cite the KYC Directions", "ms": 0.181602}, {"ok": true, "name": "spec worked example: KYC amendment to all REs = 65 and alerts", "ms": 1.283597}, {"ok": true, "name": "model score mismatch over 5 points is logged and the code score wins", "ms": 0.177111}, {"ok": true, "name": "cite checker on the real Digital Lending text", "ms": 0.27267}], "totalMs": 96.223715, "scores": {"live": [{"id": 13752, "title": "Reserve Bank of India (Domestic Money Transfer) Directions, 2026", "pubDate": "2026-11-11T17:00:00+05:30", "ref": "RBI/DPSS/2026-27/476", "addressee": "All Scheduled Commercial Banks, including Regional Rural Banks / Urban Co-operative Banks / State Co-operative Banks / District Central Co-operative Banks / Authorised Payment System Operators and Participants (Banks and Non-banks)", "gate": 0.3, "gateSource": "addressee", "topic": "fair_practices", "weight": 55, "severity": 1.6, "score": 26, "hardRule": false, "alert": false, "src": "live"}, {"id": 13751, "title": "Master Directions on Cyber Resilience and Digital Payment Security Controls for non-bank Payment System Operators", "pubDate": "2026-11-05T18:20:00+05:30", "ref": "RBI/DPSS/2026-27/475", "addressee": "The Chairman / Managing Director / Chief Executive Officer Authorised Non-bank Payment System Operators", "gate": 0.3, "gateSource": "addressee", "topic": "it_outsourcing_data", "weight": 30, "severity": 1.6, "score": 14, "hardRule": false, "alert": false, "src": "live"}, {"id": 13750, "title": "Foreign Exchange Management (Export and Import of Goods and Services) (Second Amendment) Regulations, 2026", "pubDate": "2026-11-03T15:25:00+05:30", "ref": null, "addressee": null, "gate": 0.1, "gateSource": "default", "topic": "other", "weight": 10, "severity": 1.3, "score": 1, "hardRule": false, "alert": false, "src": "live"}, {"id": 13749, "title": "Implementation of Section 51A of UAPA, 1967: Updates to UNSC\u2019s 1988 (2011) Taliban Sanctions List: Amendment of 05 Entries", "pubDate": "2026-10-30T15:15:00+05:30", "ref": "RBI/2026-27/303", "addressee": "The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions", "gate": 1, "gateSource": "addressee", "topic": "kyc_aml", "weight": 50, "severity": 0.7, "score": 35, "hardRule": false, "alert": false, "src": "live"}, {"id": 13748, "title": "Implementation of Section 51A of UAPA, 1967: Updates to UNSC\u2019s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Amendment of 03 Entries", "pubDate": "2026-10-27T17:30:00+05:30", "ref": "RBI/2026-27/302", "addressee": "The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions", "gate": 1, "gateSource": "addressee", "topic": "kyc_aml", "weight": 50, "severity": 0.7, "score": 35, "hardRule": false, "alert": false, "src": "live"}, {"id": 13747, "title": "Implementation of Section 51A of UAPA, 1967: Updates to UNSC\u2019s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Removal of 03 Entries", "pubDate": "2026-10-27T17:25:00+05:30", "ref": "RBI/2026-27/301", "addressee": "The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions", "gate": 1, "gateSource": "addressee", "topic": "kyc_aml", "weight": 50, "severity": 0.7, "score": 35, "hardRule": false, "alert": false, "src": "live"}, {"id": 13746, "title": "Re-organisation of districts in the NCT of Delhi \u2013 Assignment and Review of Lead Bank Responsibility", "pubDate": "2026-10-27T10:15:00+05:30", "ref": "RBI/2026-27/300", "addressee": "The Chairman / Managing Director & Chief Executive Officer Lead Banks concerned", "gate": 0.1, "gateSource": "addressee", "topic": "other", "weight": 10, "severity": 1, "score": 1, "hardRule": false, "alert": false, "src": "live"}, {"id": 13745, "title": "Delegation of Compounding of certain Contraventions under FEMA, 1999 to Regional Offices of the Reserve Bank", "pubDate": "2026-10-23T17:10:00+05:30", "ref": "RBI/FED/2026-27/298", "addressee": "To, All Authorised Dealer Category-I banks and other Authorised Persons", "gate": 0.1, "gateSource": "addressee", "topic": "other", "weight": 10, "severity": 1, "score": 1, "hardRule": false, "alert": false, "src": "live"}, {"id": 13744, "title": "Reserve Bank of India (Commercial Banks \u2013 Forthcoming Instructions) Second Amendment Directions, 2026", "pubDate": "2026-10-23T17:30:00+05:30", "ref": "RBI/2026-27/299", "addressee": null, "gate": 0.1, "gateSource": "title", "topic": "other", "weight": 10, "severity": 1.3, "score": 1, "hardRule": false, "alert": false, "src": "live"}, {"id": 13743, "title": "Reserve Bank of India (Commercial Banks \u2013 Prudential Norms on Capital Adequacy) Eleventh Amendment Directions, 2026", "pubDate": "2026-10-23T16:30:00+05:30", "ref": "RBI/2026-27/297", "addressee": null, "gate": 0.1, "gateSource": "title", "topic": "nbfc_prudential", "weight": 30, "severity": 1.3, "score": 4, "hardRule": false, "alert": false, "src": "live"}], "ctrl": [{"id": 12848, "title": "Reserve Bank of India (Digital Lending) Directions, 2025", "ref": "RBI/2025-26/36", "addressee": null, "gate": 1, "gateSource": "applicability_para", "topic": "digital_lending", "weight": 60, "severity": 1.6, "score": 96, "hardRule": true, "alert": true, "src": "live"}, {"id": 99001, "title": "Reserve Bank of India (Non-Banking Financial Companies \u2013 Responsible Business Conduct) Amendment Directions, 2026", "pubDate": "2026-11-13T17:00:00+05:30", "ref": "RBI/2026-27/999", "addressee": null, "gate": 1, "gateSource": "title", "topic": "fair_practices", "weight": 55, "severity": 1.3, "score": 72, "hardRule": true, "alert": true, "src": "synthetic"}]}}</script>
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById('data').textContent);
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function provChip(p) {
+    if (/^synthetic/.test(p)) return '<span class="prov synth">synthetic</span>';
+    if (/^spec/.test(p)) return '<span class="prov spec">spec</span>';
+    return '<span class="prov stand">stand-in</span>';
+  }
+  var srcLabel = { addressee: 'addressee', title: 'title entity', applicability_para: 'Applicability para', 'default': 'default' };
+  function row(r) {
+    var hr = r.hardRule ? ' · keyword rule' : '';
+    return '<tr><td class="id">' + r.id + '</td>' +
+      '<td class="title">' + esc(r.title) + '<small>' + esc(r.addressee ? (r.addressee.length > 160 ? r.addressee.slice(0, 160) + '…' : r.addressee) : 'No addressee line') + '</small></td>' +
+      '<td class="calc"><b>' + r.gate + '</b> <span>(' + srcLabel[r.gateSource] + ')</span><br>× <b>' + r.weight + '</b> ' + esc(r.topic) + '<br>× <b>' + r.severity + '</b></td>' +
+      '<td class="barcell"><div class="bar' + (r.alert ? ' alert' : '') + '" role="img" aria-label="Score ' + r.score + ' of 100"><i style="width:' + r.score + '%"></i><span>' + r.score + '</span></div></td>' +
+      '<td><span class="pill ' + (r.alert ? 'alert">Alert' : 'skip">Skip') + '</span>' + (hr ? '<br><small class="muted">' + hr.slice(3) + '</small>' : '') + '</td>' +
+      '<td class="ref">' + esc(r.ref || '—') + (r.src === 'synthetic' ? '<br><span class="prov synth">synthetic</span>' : '') + '</td></tr>';
+  }
+  document.querySelector('#live tbody').innerHTML = d.scores.live.map(row).join('');
+  document.querySelector('#ctrl tbody').innerHTML = d.scores.ctrl.map(row).join('');
+  var pass = 0;
+  document.getElementById('tests').innerHTML = d.tests.map(function (t, i) {
+    if (t.ok) pass++;
+    return '<li><span class="n">' + (i + 1) + '</span><span class="' + (t.ok ? 'ok">PASS' : 'bad">FAIL') + '</span><span class="name">' + esc(t.name) + '</span><span class="ms">' + t.ms.toFixed(1) + ' ms</span></li>';
+  }).join('');
+  document.getElementById('passcount').textContent = pass + ' / ' + d.tests.length;
+  document.getElementById('failcount').textContent = d.tests.length - pass;
+  document.getElementById('runtime').textContent = Math.round(d.totalMs) + ' ms';
+})();
+</script>
+
+</html>
