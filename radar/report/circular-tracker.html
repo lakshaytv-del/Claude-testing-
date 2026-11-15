@@ -3,151 +3,204 @@
 <title>RBI Circular Tracker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: one 1000px column. Answer first, then a 30-day strip, then filterable circular list, then how ratings work. */
+/* Layout: briefing page. Headline + email action, four figures, two views (by week, by audience), what needs attention, full list. */
 :root {
-  --bg: #f4f6f8; --surface: #ffffff; --ink: #142030; --muted: #5a6779; --line: #dfe4ea; --accent: #24527a;
-  --act: #b42318; --act-bg: #fdecea; --look: #9a5a00; --look-bg: #fdf1dc; --low: #3c6a96; --low-bg: #e6eff8;
-  --none: #7a8594; --none-bg: #eef0f3;
+  --bg: #f3f5f7; --surface: #ffffff; --ink: #13202e; --muted: #5b6878; --line: #dde3ea; --accent: #1f4f78; --accent-ink: #ffffff;
+  --act: #b42318; --act-bg: #fdecea; --look: #94560a; --look-bg: #fcf0db; --low: #34648f; --low-bg: #e5eef7;
+  --none: #7b8695; --none-bg: #edf0f3; --ok: #1d7a4c; --ok-bg: #e3f3ea;
   --head: "Instrument Sans", "Inter", system-ui, sans-serif;
   --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f151c; --surface: #17202a; --ink: #e6ebf0; --muted: #9aa6b5; --line: #29343f; --accent: #8cbbe3;
-  --act: #ff8a7a; --act-bg: #3d1c19; --look: #f2bd63; --look-bg: #3a2b12; --low: #8cb6e0; --low-bg: #1b2b3c;
-  --none: #8d97a4; --none-bg: #222b35; color-scheme: dark } }
+  --bg: #0e141b; --surface: #16202a; --ink: #e6ebf0; --muted: #9ba7b5; --line: #28333e; --accent: #8cbbe3; --accent-ink: #0e141b;
+  --act: #ff8a7a; --act-bg: #3d1c19; --look: #f0bb62; --look-bg: #3a2b12; --low: #8cb6e0; --low-bg: #1b2b3c;
+  --none: #8d97a4; --none-bg: #212a34; --ok: #6fd29d; --ok-bg: #163326; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0f151c; --surface: #17202a; --ink: #e6ebf0; --muted: #9aa6b5; --line: #29343f; --accent: #8cbbe3;
-  --act: #ff8a7a; --act-bg: #3d1c19; --look: #f2bd63; --look-bg: #3a2b12; --low: #8cb6e0; --low-bg: #1b2b3c;
-  --none: #8d97a4; --none-bg: #222b35; color-scheme: dark }
+  --bg: #0e141b; --surface: #16202a; --ink: #e6ebf0; --muted: #9ba7b5; --line: #28333e; --accent: #8cbbe3; --accent-ink: #0e141b;
+  --act: #ff8a7a; --act-bg: #3d1c19; --look: #f0bb62; --look-bg: #3a2b12; --low: #8cb6e0; --low-bg: #1b2b3c;
+  --none: #8d97a4; --none-bg: #212a34; --ok: #6fd29d; --ok-bg: #163326; color-scheme: dark }
 
 * { box-sizing: border-box }
 body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body) }
-.wrap { max-width: 1000px; margin: 0 auto; padding-block: 36px 64px;
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 36px 64px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 32px }
+  display: grid; gap: 28px }
 h1, h2, h3 { font-family: var(--head); margin: 0; text-wrap: balance }
-h1 { font-size: 32px; line-height: 1.15; font-weight: 700; letter-spacing: -.01em }
-h2 { font-size: 20px; font-weight: 600 }
+h1 { font-size: 34px; line-height: 1.12; font-weight: 700; letter-spacing: -.015em }
+h2 { font-size: 19px; font-weight: 600 }
 p { margin: 0 }
 a { color: var(--accent) }
-a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
-.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 .muted { color: var(--muted) }
-section { display: grid; gap: 14px; min-width: 0 }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+section { display: grid; gap: 12px; min-width: 0 }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; min-width: 0 }
 
-header { display: grid; gap: 10px }
-.answer { font-size: 18px; line-height: 1.45; max-width: 60ch }
-.answer b { font-weight: 600 }
+/* Header */
+header { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between }
+header .t { display: grid; gap: 8px; min-width: 0; flex: 1 1 520px }
+.btn { font: 600 14px/1 var(--body); padding: 11px 16px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px }
+.btn.primary { background: var(--accent); color: var(--accent-ink) }
+.btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line) }
+.btn:disabled { opacity: .6; cursor: default }
+.btn svg { width: 16px; height: 16px }
 
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line);
-  border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
-.stat { background: var(--surface); padding: 14px 16px; display: grid; gap: 4px; align-content: start }
-.stat .n { font: 600 30px/1 var(--head); font-variant-numeric: tabular-nums }
-.stat .l { font-size: 13px; color: var(--muted) }
-.stat.act .n { color: var(--act) } .stat.look .n { color: var(--look) } .stat.none .n { color: var(--none) }
+.verdict { display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-radius: 10px; background: var(--ok-bg) }
+.verdict.alert { background: var(--act-bg) }
+.verdict .mark { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--ok); color: var(--surface); display: grid; place-items: center; font-weight: 700 }
+.verdict.alert .mark { background: var(--act) }
+.verdict p { font-size: 17px; line-height: 1.45; max-width: 70ch }
+.verdict b { font-weight: 600 }
 
-/* 30-day strip */
-.strip-box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 16px 10px; overflow-x: auto }
-.strip { display: grid; grid-template-columns: repeat(var(--days), minmax(14px, 1fr)); gap: 3px; min-width: 520px; align-items: end; height: 92px }
-.day { display: flex; flex-direction: column-reverse; gap: 3px; height: 100%; border-bottom: 1px solid var(--line); padding-bottom: 3px }
-.day.weekend { background: linear-gradient(var(--bg), var(--bg)) bottom / 100% 100% no-repeat; border-radius: 2px 2px 0 0 }
-.dot { height: 14px; border-radius: 3px; border: 0; padding: 0; cursor: pointer }
-.dot.act { background: var(--act) } .dot.look { background: var(--look) } .dot.low { background: var(--low) } .dot.none { background: var(--none); opacity: .55 }
-.axis { display: grid; grid-template-columns: repeat(var(--days), minmax(14px, 1fr)); gap: 3px; min-width: 520px; margin-top: 6px;
-  font: 11px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
-.axis span { white-space: nowrap; overflow: visible }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin-top: 10px }
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 6px }
+.fig .n { font: 700 34px/1 var(--head); font-variant-numeric: tabular-nums }
+.fig .l { font-size: 13.5px; color: var(--muted) }
+.fig.act .n { color: var(--act) } .fig.look .n { color: var(--look) } .fig.none .n { color: var(--none) }
+
+.views { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px }
+.views .panel { display: grid; gap: 14px; align-content: start }
+.views h3 { font: 600 15px/1.3 var(--head) }
+
+/* By week: stacked bars */
+.weeks { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; align-items: end; height: 170px; padding-top: 8px }
+.wk { display: grid; grid-template-rows: auto 1fr; gap: 6px; height: 100%; align-items: end; justify-items: center }
+.wk .tot { font: 600 13px/1 var(--body); font-variant-numeric: tabular-nums }
+.wk .stack { width: 100%; max-width: 56px; display: flex; flex-direction: column-reverse; gap: 2px; align-self: end }
+.wk .stack i { display: block; border-radius: 3px }
+.wlabels { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; font-size: 12px; color: var(--muted); text-align: center; border-top: 1px solid var(--line); padding-top: 8px }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted) }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px }
 
-/* Filters */
+/* By audience: horizontal bars */
+.aud { display: grid; gap: 12px }
+.aud .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 14px }
+.aud .row b { font-weight: 600; font-variant-numeric: tabular-nums }
+.aud .bar { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--none-bg); overflow: hidden }
+.aud .bar i { display: block; height: 100%; border-radius: 4px }
+
+/* Attention */
+.attn { display: grid; gap: 10px }
+.attn-item { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface) }
+.attn-item .date { font-size: 13px; color: var(--muted); grid-column: 2 }
+.attn-item h3 { grid-column: 2; font: 600 15.5px/1.35 var(--head) }
+.attn-item p { grid-column: 2; font-size: 14px; color: var(--muted) }
+.attn-item .badge { grid-row: 1 / span 3; align-self: start }
+
+/* List */
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
 .chip { font: 500 13px/1 var(--body); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink) }
-.chip .c { font-variant-numeric: tabular-nums; opacity: .7; margin-left: 4px }
-.search { flex: 1 1 200px; min-width: 0; font: 14px var(--body); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink) }
-
-/* Circular list */
-.list { display: grid; gap: 10px }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0 }
-.card.flash { box-shadow: 0 0 0 2px var(--accent) }
-.top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: var(--muted) }
-.badge { font: 600 12px/1 var(--body); padding: 5px 9px; border-radius: 4px; letter-spacing: .01em }
+.chip .c { font-variant-numeric: tabular-nums; opacity: .65; margin-left: 4px }
+.search { flex: 1 1 220px; min-width: 0; font: 14px var(--body); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink) }
+.tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto }
+table { width: 100%; border-collapse: collapse; min-width: 720px }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px }
+tr:last-child td { border-bottom: 0 }
+th { font: 600 12px/1.2 var(--body); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg) }
+td.date { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums }
+td.title a { color: var(--ink); font-weight: 500; text-decoration: none } td.title a:hover { text-decoration: underline; color: var(--accent) }
+td.title .pdf { font-size: 12.5px; margin-left: 6px; color: var(--accent) }
+.badge { font: 600 12px/1 var(--body); padding: 6px 9px; border-radius: 5px; white-space: nowrap; display: inline-block }
 .badge.act { background: var(--act-bg); color: var(--act) } .badge.look { background: var(--look-bg); color: var(--look) }
 .badge.low { background: var(--low-bg); color: var(--low) } .badge.none { background: var(--none-bg); color: var(--none) }
-.card h3 { font: 600 16.5px/1.35 var(--head) }
-.card h3 a { color: var(--ink); text-decoration: none } .card h3 a:hover { text-decoration: underline }
-.facts { display: grid; grid-template-columns: 120px 1fr; gap: 4px 14px; font-size: 14px }
-.facts dt { color: var(--muted) } .facts dd { margin: 0; min-width: 0 }
-.meta { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 13px; color: var(--muted) }
-.meta .ref { font: 12px var(--mono) }
-.meter { display: inline-flex; align-items: center; gap: 8px; font: 12px var(--mono); font-variant-numeric: tabular-nums }
-.meter b { display: inline-block; width: 80px; height: 6px; background: var(--none-bg); border-radius: 3px; position: relative; overflow: hidden }
-.meter b i { position: absolute; inset: 0 auto 0 0; border-radius: 3px }
-details summary { cursor: pointer; color: var(--accent); font-size: 13px }
-details .math { margin-top: 6px; font: 12.5px/1.6 var(--mono); color: var(--muted) }
-.empty { padding: 28px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px }
+.empty { padding: 28px; text-align: center; color: var(--muted) }
+.key { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; font-size: 13.5px; color: var(--muted) }
+.key div { display: grid; gap: 6px; align-content: start }
+.key .badge { justify-self: start }
+footer { font-size: 12.5px; color: var(--muted) }
 
-/* How ratings work */
-.levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px }
-.level { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 6px; align-content: start; font-size: 14px }
-.foot { font-size: 13px; color: var(--muted); display: grid; gap: 6px }
-.foot code { font: 12px var(--mono) }
+/* Email dialog */
+dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; width: min(520px, calc(100vw - 32px)); background: var(--surface); color: var(--ink) }
+dialog::backdrop { background: rgba(10, 16, 24, .45) }
+.dlg { display: grid; gap: 14px; padding: 22px }
+.dlg h2 { font-size: 18px }
+.dlg label { display: grid; gap: 6px; font-size: 13px; font-weight: 500 }
+.dlg input, .dlg textarea { font: 14px var(--body); padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100% }
+.dlg textarea { resize: vertical; min-height: 70px }
+.dlg .acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end }
+.dlg .status { font-size: 13.5px; padding: 10px 12px; border-radius: 8px; background: var(--bg) }
+.dlg .status.ok { background: var(--ok-bg); color: var(--ok) }
+.dlg .status.err { background: var(--act-bg); color: var(--act) }
+.dlg .hint { font-size: 12.5px; color: var(--muted) }
 
-@media (max-width: 720px) {
-  .stats, .levels { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  h1 { font-size: 26px }
-  .facts { grid-template-columns: 1fr; gap: 0 }
-  .facts dd { margin-bottom: 6px }
+@media (max-width: 760px) {
+  .figures, .key { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .views { grid-template-columns: 1fr }
+  h1 { font-size: 27px }
 }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important } }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">RBI Circular Radar · rated for an NBFC lending team</div>
-    <h1 id="h1">RBI circulars, last 30 days</h1>
-    <p class="muted" id="sub"></p>
-    <p class="answer" id="answer"></p>
+    <div class="t">
+      <div class="eyebrow">RBI regulatory update · NBFC lending</div>
+      <h1>RBI circulars, last 30 days</h1>
+      <p class="muted" id="sub"></p>
+    </div>
+    <button class="btn primary" id="emailBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+      Email this update
+    </button>
   </header>
 
-  <div class="stats" id="stats"></div>
+  <div class="verdict" id="verdict"><span class="mark" id="mark">✓</span><p id="answer"></p></div>
 
-  <section aria-labelledby="t-strip">
-    <h2 id="t-strip">Published by day</h2>
-    <div class="strip-box">
-      <div class="strip" id="strip"></div>
-      <div class="axis" id="axis"></div>
-      <div class="legend"><span><i style="background:var(--act)"></i>Act now</span><span><i style="background:var(--look)"></i>Worth a look</span><span><i style="background:var(--low)"></i>Low</span><span><i style="background:var(--none);opacity:.55"></i>Not for NBFCs</span></div>
+  <div class="figures" id="figures"></div>
+
+  <div class="views">
+    <div class="panel">
+      <h3>Circulars by week</h3>
+      <div class="weeks" id="weeks"></div>
+      <div class="wlabels" id="wlabels"></div>
+      <div class="legend"><span><i style="background:var(--act)"></i>Action needed</span><span><i style="background:var(--look)"></i>For our teams' attention</span><span><i style="background:var(--low)"></i>Indirect</span><span><i style="background:var(--none)"></i>Not applicable</span></div>
     </div>
+    <div class="panel">
+      <h3>Who RBI addressed</h3>
+      <div class="aud" id="aud"></div>
+    </div>
+  </div>
+
+  <section aria-labelledby="t-attn">
+    <h2 id="t-attn">For our attention</h2>
+    <div class="attn" id="attn"></div>
   </section>
 
-  <section aria-labelledby="t-list">
-    <h2 id="t-list">Circulars</h2>
+  <section aria-labelledby="t-all">
+    <h2 id="t-all">All circulars</h2>
     <div class="controls" id="chips" role="group" aria-label="Filter by relevance"></div>
-    <input class="search" id="q" type="search" placeholder="Search titles, refs or addressees" aria-label="Search circulars">
-    <div class="list" id="list"></div>
+    <input class="search" id="q" type="search" placeholder="Search circulars" aria-label="Search circulars">
+    <div class="tablebox"><table><thead><tr><th>Date</th><th>Circular</th><th>Relevance</th><th>Applies to</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="key">
+      <div><span class="badge act">Action needed</span>Changes how we lend, collect, onboard or disclose.</div>
+      <div><span class="badge look">For our teams' attention</span>Applies to us; routine work for one team, no product change.</div>
+      <div><span class="badge low">Indirect</span>Addressed to partners we work with, such as payment operators.</div>
+      <div><span class="badge none">Not applicable</span>Addressed to banks or forex dealers only.</div>
+    </div>
   </section>
 
-  <section aria-labelledby="t-how">
-    <h2 id="t-how">How ratings work</h2>
-    <div class="levels">
-      <div class="level"><span class="badge act" style="justify-self:start">Act now</span><p>Binds NBFCs and changes something you run: lending, collections, KYC, fair practices. Also any circular whose title names digital lending, recovery agents, the Fair Practices Code, responsible business conduct, co-lending or KYC and binds NBFCs.</p></div>
-      <div class="level"><span class="badge look" style="justify-self:start">Worth a look</span><p>Binds NBFCs, but the change is routine, like a sanctions-list update for the KYC team. Or a big change on a payment rail NBFCs use.</p></div>
-      <div class="level"><span class="badge low" style="justify-self:start">Low</span><p>Touches NBFCs indirectly, such as payment operators or banks on a shared rail.</p></div>
-      <div class="level"><span class="badge none" style="justify-self:start">Not for NBFCs</span><p>Addressed to banks, cooperative banks, payment operators or forex dealers only.</p></div>
-    </div>
-    <div class="foot">
-      <p>Score out of 100 = who it applies to (1.0 NBFCs, 0.6 banks on a shared rail, 0.3 payment operators, 0.1 banks or forex) × topic weight (up to 60) × type of change (1.6 new rules, 1.3 amendment, 1.0 clarification, 0.7 list update). Act now at 60 or above, worth a look 30–59, low 10–29.</p>
-      <p id="srcnote"></p>
-      <p>Ratings come from fixed rules, not from reading the full circular. Rebuild this page with <code>node tracker.mjs</code> in <code>radar/</code>.</p>
-    </div>
-  </section>
+  <footer id="foot"></footer>
 </div>
 
-<script id="data" type="application/json">{"generatedAt":"2026-11-15T08:26:36.690Z","today":"2026-11-15","cutoff":"2026-10-17","days":30,"threshold":60,"feedIds":[13752,13751,13750,13749,13748,13747,13746,13745,13744,13743],"log":[],"circulars":[{"id":13752,"title":"Reserve Bank of India (Domestic Money Transfer) Directions, 2026","ref":"RBI/DPSS/2026-27/476","date":"2026-11-11","published":"2026-11-11","addressee":"All Scheduled Commercial Banks, including Regional Rural Banks / Urban Co-operative Banks / State Co-operative Banks / District Central Co-operative Banks / Authorised Payment System Operators and Participants (Banks and Non-banks)","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13752&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/476MDDC5A297B05094F8096910FE97E1AD34D.PDF","source":"feed","score":26,"alert":false,"hardRule":false,"gate":0.3,"gateSource":"addressee","topic":"fair_practices","weight":55,"severity":1.6},{"id":13751,"title":"Master Directions on Cyber Resilience and Digital Payment Security Controls for non-bank Payment System Operators","ref":"RBI/DPSS/2026-27/475","date":"2026-11-05","published":"2026-11-05","addressee":"The Chairman / Managing Director / Chief Executive Officer Authorised Non-bank Payment System Operators","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13751&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/475MDA65A2A40240B4510BB6301A33C9ECBFE.PDF","source":"feed","score":14,"alert":false,"hardRule":false,"gate":0.3,"gateSource":"addressee","topic":"it_outsourcing_data","weight":30,"severity":1.6},{"id":13750,"title":"Foreign Exchange Management (Export and Import of Goods and Services) (Second Amendment) Regulations, 2026","ref":null,"date":"2026-11-02","published":"2026-11-03","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13750&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/FEMA23RA03112026F5D7706996DD3493DAD9E0899C64D4793.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"default","topic":"other","weight":10,"severity":1.3},{"id":13749,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1988 (2011) Taliban Sanctions List: Amendment of 05 Entries","ref":"RBI/2026-27/303","date":"2026-10-30","published":"2026-10-30","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13749&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT30314AC275308034E98A5E239A91CEAA5A7.PDF","source":"feed","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13748,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Amendment of 03 Entries","ref":"RBI/2026-27/302","date":"2026-10-27","published":"2026-10-27","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13748&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT302E49744F98EB44A8EACBC0B6D70E470B8.PDF","source":"feed","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13747,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Removal of 03 Entries","ref":"RBI/2026-27/301","date":"2026-10-27","published":"2026-10-27","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13747&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT3013F135D4783BE47B18D037114D5923B44.PDF","source":"feed","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13746,"title":"Re-organisation of districts in the NCT of Delhi – Assignment and Review of Lead Bank Responsibility","ref":"RBI/2026-27/300","date":"2026-10-26","published":"2026-10-27","addressee":"The Chairman / Managing Director & Chief Executive Officer Lead Banks concerned","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13746&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NOT300F305FBB8AB71472391BE6B9C2D74EB35.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"addressee","topic":"other","weight":10,"severity":1},{"id":13745,"title":"Delegation of Compounding of certain Contraventions under FEMA, 1999 to Regional Offices of the Reserve Bank","ref":"RBI/FED/2026-27/298","date":"2026-10-23","published":"2026-10-23","addressee":"To, All Authorised Dealer Category-I banks and other Authorised Persons","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13745&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT298AC9CBAC4415B41D5B6CE45FF58A5AB54.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"addressee","topic":"other","weight":10,"severity":1},{"id":13744,"title":"Reserve Bank of India (Commercial Banks – Forthcoming Instructions) Second Amendment Directions, 2026","ref":"RBI/2026-27/299","date":"2026-10-23","published":"2026-10-23","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13744&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT298343573D91EA4465B8CFF54B27EC977D5.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"other","weight":10,"severity":1.3},{"id":13743,"title":"Reserve Bank of India (Commercial Banks – Prudential Norms on Capital Adequacy) Eleventh Amendment Directions, 2026","ref":"RBI/2026-27/297","date":"2026-10-23","published":"2026-10-23","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13743&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/297NTF24A93A6BC7943F2A35FACCE28E4ABC3.PDF","source":"feed","score":4,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"nbfc_prudential","weight":30,"severity":1.3},{"id":13742,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Amendment of 03 Entries","ref":"RBI/2026-27/296","date":"2026-10-19","published":"2026-10-19","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13742&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NOTI2964177D6F8B5FA4B0A917BA90749E2394E.PDF","source":"listing","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13741,"title":"Reserve Bank of India (Small Finance Banks - Miscellaneous) Amendment Directions, 2026","ref":"RBI/2026-27/295","date":"2026-10-19","published":"2026-10-19","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13741&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT29576C2A2CDED3247308333EE2DE9383863.PDF","source":"listing","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"other","weight":10,"severity":1.3},{"id":13740,"title":"Reserve Bank of India (Commercial Banks - Miscellaneous) Second Amendment Directions, 2026","ref":"RBI/2026-27/294","date":"2026-10-19","published":"2026-10-19","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13740&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/294NT8A37BD7CAFB1463E8FCD9E5CC9F4D45B.PDF","source":"listing","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"other","weight":10,"severity":1.3}]}</script>
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form class="dlg" id="dlgForm" method="dialog">
+    <h2 id="dlgTitle">Email this update</h2>
+    <p class="hint" id="dlgHint"></p>
+    <label for="emTo">To<input id="emTo" type="text" inputmode="email" autocomplete="email" placeholder="manager@company.com" required></label>
+    <label for="emSubj">Subject<input id="emSubj" type="text"></label>
+    <label for="emNote">Note (optional)<textarea id="emNote" placeholder="Sharing this month's RBI update."></textarea></label>
+    <div class="status" id="dlgStatus" hidden></div>
+    <div class="acts">
+      <button class="btn ghost" type="button" id="copyBtn">Copy summary</button>
+      <button class="btn ghost" type="button" id="closeBtn">Close</button>
+      <button class="btn primary" type="submit" id="sendBtn">Create Gmail draft</button>
+    </div>
+  </form>
+</dialog>
+
+<script id="data" type="application/json">{"generatedAt":"2026-11-15T09:14:26.354Z","today":"2026-11-15","cutoff":"2026-10-17","days":30,"threshold":60,"feedIds":[13752,13751,13750,13749,13748,13747,13746,13745,13744,13743],"log":[],"circulars":[{"id":13752,"title":"Reserve Bank of India (Domestic Money Transfer) Directions, 2026","ref":"RBI/DPSS/2026-27/476","date":"2026-11-11","published":"2026-11-11","addressee":"All Scheduled Commercial Banks, including Regional Rural Banks / Urban Co-operative Banks / State Co-operative Banks / District Central Co-operative Banks / Authorised Payment System Operators and Participants (Banks and Non-banks)","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13752&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/476MDDC5A297B05094F8096910FE97E1AD34D.PDF","source":"feed","score":26,"alert":false,"hardRule":false,"gate":0.3,"gateSource":"addressee","topic":"fair_practices","weight":55,"severity":1.6},{"id":13751,"title":"Master Directions on Cyber Resilience and Digital Payment Security Controls for non-bank Payment System Operators","ref":"RBI/DPSS/2026-27/475","date":"2026-11-05","published":"2026-11-05","addressee":"The Chairman / Managing Director / Chief Executive Officer Authorised Non-bank Payment System Operators","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13751&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/475MDA65A2A40240B4510BB6301A33C9ECBFE.PDF","source":"feed","score":14,"alert":false,"hardRule":false,"gate":0.3,"gateSource":"addressee","topic":"it_outsourcing_data","weight":30,"severity":1.6},{"id":13750,"title":"Foreign Exchange Management (Export and Import of Goods and Services) (Second Amendment) Regulations, 2026","ref":null,"date":"2026-11-02","published":"2026-11-03","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13750&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/FEMA23RA03112026F5D7706996DD3493DAD9E0899C64D4793.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"default","topic":"other","weight":10,"severity":1.3},{"id":13749,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1988 (2011) Taliban Sanctions List: Amendment of 05 Entries","ref":"RBI/2026-27/303","date":"2026-10-30","published":"2026-10-30","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13749&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT30314AC275308034E98A5E239A91CEAA5A7.PDF","source":"feed","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13748,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Amendment of 03 Entries","ref":"RBI/2026-27/302","date":"2026-10-27","published":"2026-10-27","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13748&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT302E49744F98EB44A8EACBC0B6D70E470B8.PDF","source":"feed","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13747,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Removal of 03 Entries","ref":"RBI/2026-27/301","date":"2026-10-27","published":"2026-10-27","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13747&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT3013F135D4783BE47B18D037114D5923B44.PDF","source":"feed","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13746,"title":"Re-organisation of districts in the NCT of Delhi – Assignment and Review of Lead Bank Responsibility","ref":"RBI/2026-27/300","date":"2026-10-26","published":"2026-10-27","addressee":"The Chairman / Managing Director & Chief Executive Officer Lead Banks concerned","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13746&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NOT300F305FBB8AB71472391BE6B9C2D74EB35.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"addressee","topic":"other","weight":10,"severity":1},{"id":13745,"title":"Delegation of Compounding of certain Contraventions under FEMA, 1999 to Regional Offices of the Reserve Bank","ref":"RBI/FED/2026-27/298","date":"2026-10-23","published":"2026-10-23","addressee":"To, All Authorised Dealer Category-I banks and other Authorised Persons","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13745&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT298AC9CBAC4415B41D5B6CE45FF58A5AB54.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"addressee","topic":"other","weight":10,"severity":1},{"id":13744,"title":"Reserve Bank of India (Commercial Banks – Forthcoming Instructions) Second Amendment Directions, 2026","ref":"RBI/2026-27/299","date":"2026-10-23","published":"2026-10-23","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13744&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT298343573D91EA4465B8CFF54B27EC977D5.PDF","source":"feed","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"other","weight":10,"severity":1.3},{"id":13743,"title":"Reserve Bank of India (Commercial Banks – Prudential Norms on Capital Adequacy) Eleventh Amendment Directions, 2026","ref":"RBI/2026-27/297","date":"2026-10-23","published":"2026-10-23","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13743&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/297NTF24A93A6BC7943F2A35FACCE28E4ABC3.PDF","source":"feed","score":4,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"nbfc_prudential","weight":30,"severity":1.3},{"id":13742,"title":"Implementation of Section 51A of UAPA, 1967: Updates to UNSC’s 1267/ 1989 ISIL (Da'esh) & Al-Qaida Sanctions List: Amendment of 03 Entries","ref":"RBI/2026-27/296","date":"2026-10-19","published":"2026-10-19","addressee":"The Chairpersons/ CEOs of the Commercial Banks, Small Finance Banks, Payment Banks, Urban Co-operative Banks, Rural Co-operative Banks, Regional Rural Banks, Local Area Banks, Non-Banking Financial Companies, Asset Reconstruction Companies, All India Financial Institutions","link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13742&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NOTI2964177D6F8B5FA4B0A917BA90749E2394E.PDF","source":"listing","score":35,"alert":false,"hardRule":false,"gate":1,"gateSource":"addressee","topic":"kyc_aml","weight":50,"severity":0.7},{"id":13741,"title":"Reserve Bank of India (Small Finance Banks - Miscellaneous) Amendment Directions, 2026","ref":"RBI/2026-27/295","date":"2026-10-19","published":"2026-10-19","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13741&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/NT29576C2A2CDED3247308333EE2DE9383863.PDF","source":"listing","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"other","weight":10,"severity":1.3},{"id":13740,"title":"Reserve Bank of India (Commercial Banks - Miscellaneous) Second Amendment Directions, 2026","ref":"RBI/2026-27/294","date":"2026-10-19","published":"2026-10-19","addressee":null,"link":"https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=13740&Mode=0","pdf":"https://rbidocs.rbi.org.in/rdocs/notification/PDFs/294NT8A37BD7CAFB1463E8FCD9E5CC9F4D45B.PDF","source":"listing","score":1,"alert":false,"hardRule":false,"gate":0.1,"gateSource":"title","topic":"other","weight":10,"severity":1.3}]}</script>
 <script>
 (function () {
   var D = JSON.parse(document.getElementById('data').textContent);
@@ -157,109 +210,198 @@ details .math { margin-top: 6px; font: 12.5px/1.6 var(--mono); color: var(--mute
   var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fmt(d, yr) { var p = d.split('-'); return +p[2] + ' ' + MON[+p[1] - 1] + (yr ? ' ' + p[0] : ''); }
 
-  var LEVEL = { act: 'Act now', look: 'Worth a look', low: 'Low', none: 'Not for NBFCs' };
-  function level(c) { return c.alert ? 'act' : c.score >= 30 ? 'look' : c.score >= 10 ? 'low' : 'none'; }
-  var WHO = { 1: 'NBFCs (among others)', 0.6: 'Banks, on a payment rail NBFCs use', 0.3: 'Payment system operators, not NBFCs', 0.1: 'Banks, cooperative banks or forex dealers, not NBFCs' };
-  var FROM = { addressee: 'from the addressee list', title: 'from the title', applicability_para: 'from the Applicability paragraph', 'default': 'no addressee found' };
-  var TOPIC = { digital_lending: 'Digital lending', collections_recovery: 'Collections and recovery', fair_practices: 'Fair practices and grievances', kyc_aml: 'KYC and anti-money laundering', co_lending: 'Co-lending', payments_mandates: 'Payments and mandates', credit_reporting: 'Credit reporting', nbfc_prudential: 'Prudential norms (capital, provisioning)', it_outsourcing_data: 'IT, cyber and outsourcing', other: 'Outside the lending profile' };
-  var CHANGE = { 1.6: 'new rules or directions', 1.3: 'an amendment to existing rules', 1: 'a clarification or one-off notice', 0.7: 'a list update or routine notice' };
-  var TEAM = { kyc_aml: 'the KYC and sanctions screening team', credit_reporting: 'the credit bureau reporting team', payments_mandates: 'the payments team', it_outsourcing_data: 'IT and security', nbfc_prudential: 'finance and risk' };
+  var LV = { act: 'Action needed', look: "For our teams' attention", low: 'Indirect', none: 'Not applicable' };
   var COLOR = { act: 'var(--act)', look: 'var(--look)', low: 'var(--low)', none: 'var(--none)' };
-
-  function why(c) {
-    var lv = level(c);
-    if (lv === 'act') return c.hardRule ? 'It binds NBFCs and its title names a topic that always needs review.' : 'It binds NBFCs and changes a ' + TOPIC[c.topic].toLowerCase() + ' rule.';
-    if (c.gate === 1 && c.severity === 0.7) return 'It binds NBFCs, but it is ' + CHANGE[c.severity] + '. Pass it to ' + (TEAM[c.topic] || 'the owning team') + '; no product change.';
-    if (c.gate === 1) return 'It binds NBFCs; the topic (' + TOPIC[c.topic].toLowerCase() + ') carries low weight for a lending team.';
-    return 'It is addressed to ' + WHO[c.gate].replace(', not NBFCs', '').toLowerCase() + ', so it does not bind an NBFC.';
+  function level(c) { return c.alert ? 'act' : c.score >= 30 ? 'look' : c.score >= 10 ? 'low' : 'none'; }
+  function audience(c) {
+    var a = (c.addressee || '') + ' ' + c.title;
+    if (c.gate === 1) return 'NBFCs and other lenders';
+    if (c.gate === 0.3 || /Payment System Operator/i.test(a)) return 'Payment operators';
+    if (/FEMA|Foreign Exchange|Authorised Dealer|Authorised Persons/i.test(a)) return 'Forex dealers';
+    return 'Banks';
   }
-
-  C.forEach(function (c) { c.lv = level(c); });
+  var TEAM = { kyc_aml: 'KYC and sanctions screening', credit_reporting: 'Credit bureau reporting', payments_mandates: 'Payments', it_outsourcing_data: 'IT and security', nbfc_prudential: 'Finance and risk' };
+  function meaning(c) {
+    if (/UAPA|Sanctions List/i.test(c.title)) return 'Update to the UN sanctions list. The KYC team updates its screening lists; no product change.';
+    if (c.lv === 'act') return 'Changes rules for our business. Review with compliance and the product owner.';
+    return 'For the ' + (TEAM[c.topic] || 'compliance').toLowerCase() + ' team to review; no product change.';
+  }
+  C.forEach(function (c) { c.lv = level(c); c.aud = audience(c); });
   var count = { act: 0, look: 0, low: 0, none: 0 };
   C.forEach(function (c) { count[c.lv]++; });
+  var period = fmt(D.cutoff) + ' – ' + fmt(D.today, true);
+  var asOf = new Date(D.generatedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
 
-  // Header
-  var gen = new Date(D.generatedAt);
-  $('sub').textContent = fmt(D.cutoff) + ' – ' + fmt(D.today, true) + ' · checked ' + gen.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) + ' IST';
-  var look = C.filter(function (c) { return c.lv === 'look'; });
-  var ans;
-  if (count.act) ans = '<b>' + count.act + ' circular' + (count.act > 1 ? 's need' : ' needs') + ' action</b> out of ' + C.length + ' published.';
-  else ans = '<b>Nothing needs action.</b> RBI published ' + C.length + ' circulars in the last ' + D.days + ' days; none changes how an NBFC lends or collects.';
-  if (look.length) {
-    var uapa = look.every(function (c) { return /UAPA|Sanctions List/i.test(c.title); });
-    ans += ' ' + look.length + (uapa ? ' sanctions-list update' + (look.length > 1 ? 's are' : ' is') + ' for your KYC team.' : ' are worth a look.');
+  // Header + verdict
+  $('sub').textContent = period + ' · as of ' + asOf;
+  var attn = C.filter(function (c) { return c.lv === 'act' || c.lv === 'look'; });
+  var sanctions = attn.filter(function (c) { return /UAPA|Sanctions List/i.test(c.title); }).length;
+  var answer;
+  if (count.act) {
+    $('verdict').classList.add('alert'); $('mark').textContent = '!';
+    answer = '<b>' + count.act + ' circular' + (count.act > 1 ? 's need' : ' needs') + ' action.</b> RBI issued ' + C.length + ' circulars in this period; see “For our attention” below.';
+  } else {
+    answer = '<b>No action needed on our lending products.</b> RBI issued ' + C.length + ' circulars in the last ' + D.days + ' days. ' +
+      (sanctions ? sanctions + ' are sanctions-list updates for the KYC team to apply; the rest are for banks, payment operators and forex dealers.' : count.look ? count.look + ' are for our teams’ attention.' : 'None applies to us.');
   }
-  $('answer').innerHTML = ans;
+  $('answer').innerHTML = answer;
+  var summaryText = answer.replace(/<[^>]+>/g, '');
 
-  $('stats').innerHTML = [
-    ['', C.length, 'circulars published'],
-    ['act', count.act, 'need action'],
-    ['look', count.look, 'worth a look'],
-    ['none', count.none + count.low, 'low or not for NBFCs'],
-  ].map(function (s) { return '<div class="stat ' + s[0] + '"><span class="n">' + s[1] + '</span><span class="l">' + s[2] + '</span></div>'; }).join('');
+  $('figures').innerHTML = [
+    ['', C.length, 'Circulars issued'],
+    ['act', count.act, 'Need action'],
+    ['look', count.look, "For our teams' attention"],
+    ['none', count.low + count.none, 'Not applicable to us'],
+  ].map(function (f) { return '<div class="fig ' + f[0] + '"><span class="n">' + f[1] + '</span><span class="l">' + f[2] + '</span></div>'; }).join('');
 
-  // 30-day strip
-  var strip = $('strip'), axis = $('axis');
-  strip.style.setProperty('--days', D.days); axis.style.setProperty('--days', D.days);
-  var start = Date.parse(D.cutoff), sh = '', ah = '';
-  for (var k = 0; k < D.days; k++) {
-    var dt = new Date(start + k * 86400e3), iso = dt.toISOString().slice(0, 10), wd = dt.getUTCDay();
-    var dayC = C.filter(function (c) { return c.date === iso; }).sort(function (a, b) { return a.score - b.score; });
-    sh += '<div class="day' + (wd === 0 || wd === 6 ? ' weekend' : '') + '" title="' + fmt(iso) + '">' + dayC.map(function (c) {
-      return '<button class="dot ' + c.lv + '" data-id="' + c.id + '" aria-label="' + esc(fmt(iso) + ': ' + c.title + ' (' + LEVEL[c.lv] + ')') + '" title="' + esc(fmt(iso) + ' · ' + LEVEL[c.lv] + ' · ' + c.title) + '"></button>';
-    }).join('') + '</div>';
-    ah += '<span>' + (k % 7 === 0 || (k === D.days - 1 && k % 7 > 3) ? fmt(iso) : '') + '</span>';
+  // By week (weeks ending today, oldest first)
+  var end = Date.parse(D.today), nW = Math.ceil(D.days / 7), weeks = [];
+  for (var w = nW - 1; w >= 0; w--) {
+    var to = end - w * 7 * 86400e3, from = Math.max(to - 6 * 86400e3, Date.parse(D.cutoff));
+    weeks.push({ from: new Date(from).toISOString().slice(0, 10), to: new Date(to).toISOString().slice(0, 10), items: [] });
   }
-  strip.innerHTML = sh; axis.innerHTML = ah;
+  C.forEach(function (c) { weeks.forEach(function (wk) { if (c.date >= wk.from && c.date <= wk.to) wk.items.push(c); }); });
+  var maxW = Math.max.apply(null, weeks.map(function (wk) { return wk.items.length; }).concat([1]));
+  $('weeks').style.setProperty('--n', weeks.length); $('wlabels').style.setProperty('--n', weeks.length);
+  $('weeks').innerHTML = weeks.map(function (wk) {
+    var segs = ['act', 'look', 'low', 'none'].map(function (k) {
+      var n = wk.items.filter(function (c) { return c.lv === k; }).length;
+      return n ? '<i style="height:' + (n / maxW * 130) + 'px;background:' + COLOR[k] + '" title="' + n + ' ' + LV[k].toLowerCase() + '"></i>' : '';
+    }).join('');
+    return '<div class="wk"><span class="tot">' + (wk.items.length || '') + '</span><div class="stack" role="img" aria-label="' + wk.items.length + ' circulars, ' + fmt(wk.from) + ' to ' + fmt(wk.to) + '">' + segs + '</div></div>';
+  }).join('');
+  $('wlabels').innerHTML = weeks.map(function (wk) { return '<span>' + fmt(wk.from) + '–' + fmt(wk.to) + '</span>'; }).join('');
 
-  // Filters + list
+  // Who RBI addressed
+  var AUD = ['NBFCs and other lenders', 'Banks', 'Payment operators', 'Forex dealers'];
+  var AUDC = { 'NBFCs and other lenders': 'var(--look)', 'Banks': 'var(--none)', 'Payment operators': 'var(--low)', 'Forex dealers': 'var(--none)' };
+  $('aud').innerHTML = AUD.map(function (a) {
+    var n = C.filter(function (c) { return c.aud === a; }).length;
+    return '<div class="row"><span>' + a + '</span><b>' + n + '</b><div class="bar"><i style="width:' + (n / C.length * 100) + '%;background:' + AUDC[a] + '"></i></div></div>';
+  }).join('');
+
+  // For our attention
+  $('attn').innerHTML = attn.length ? attn.map(function (c) {
+    return '<article class="attn-item"><span class="badge ' + c.lv + '">' + LV[c.lv] + '</span><span class="date">' + fmt(c.date, true) + '</span>' +
+      '<h3><a href="' + esc(c.link) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">' + esc(c.title) + '</a></h3><p>' + esc(meaning(c)) + '</p></article>';
+  }).join('') : '<div class="panel muted">Nothing in this period applies to our business.</div>';
+
+  // All circulars
   var state = { lv: 'all', q: '' };
-  try { var saved = localStorage.getItem('tracker-filter'); if (saved) state.lv = saved; } catch (e) {}
-  var chipsDef = [['all', 'All', C.length], ['act', 'Act now', count.act], ['look', 'Worth a look', count.look], ['low', 'Low', count.low], ['none', 'Not for NBFCs', count.none]];
-  function drawChips() {
-    $('chips').innerHTML = chipsDef.map(function (c) { return '<button class="chip" data-lv="' + c[0] + '" aria-pressed="' + (state.lv === c[0]) + '">' + c[1] + '<span class="c">' + c[2] + '</span></button>'; }).join('');
-  }
-  function card(c) {
-    var src = c.source === 'feed' ? '' : ' · from the listing page';
-    return '<article class="card" id="c' + c.id + '">' +
-      '<div class="top"><span class="badge ' + c.lv + '">' + LEVEL[c.lv] + '</span><span>' + fmt(c.date, true) + (c.published && c.published !== c.date ? ' · published ' + fmt(c.published) : '') + src + '</span></div>' +
-      '<h3><a href="' + esc(c.link) + '" target="_blank" rel="noopener">' + esc(c.title) + '</a></h3>' +
-      '<dl class="facts"><dt>Applies to</dt><dd>' + esc(WHO[c.gate]) + ' <span class="muted">(' + FROM[c.gateSource] + ')</span></dd>' +
-      '<dt>Topic</dt><dd>' + esc(TOPIC[c.topic]) + ' · ' + CHANGE[c.severity] + '</dd>' +
-      '<dt>Why this rating</dt><dd>' + esc(why(c)) + '</dd></dl>' +
-      '<div class="meta"><span class="meter" aria-label="Score ' + c.score + ' of 100"><b><i style="width:' + c.score + '%;background:' + COLOR[c.lv] + '"></i></b>' + c.score + '/100</span>' +
-      (c.ref ? '<span class="ref">' + esc(c.ref) + '</span>' : '') +
-      '<a href="' + esc(c.link) + '" target="_blank" rel="noopener">Read on RBI</a>' +
-      (c.pdf ? '<a href="' + esc(c.pdf) + '" target="_blank" rel="noopener">PDF</a>' : '') + '</div>' +
-      '<details><summary>Addressee and score working</summary><div class="math">' +
-      (c.addressee ? esc(c.addressee) + '<br>' : 'No addressee line.<br>') +
-      c.gate + ' (applies to) × ' + c.weight + ' (' + c.topic + ') × ' + c.severity + ' (change) = ' + c.score + (c.hardRule ? ' · title keyword rule fired' : '') + '</div></details></article>';
-  }
-  function drawList() {
+  var chipsDef = [['all', 'All', C.length], ['act', LV.act, count.act], ['look', LV.look, count.look], ['low', LV.low, count.low], ['none', LV.none, count.none]];
+  function drawChips() { $('chips').innerHTML = chipsDef.map(function (c) { return '<button class="chip" type="button" data-lv="' + c[0] + '" aria-pressed="' + (state.lv === c[0]) + '">' + esc(c[1]) + '<span class="c">' + c[2] + '</span></button>'; }).join(''); }
+  function drawRows() {
     var q = state.q.toLowerCase();
-    var rows = C.filter(function (c) {
-      return (state.lv === 'all' || c.lv === state.lv) && (!q || (c.title + ' ' + (c.ref || '') + ' ' + (c.addressee || '')).toLowerCase().indexOf(q) >= 0);
-    });
-    $('list').innerHTML = rows.length ? rows.map(card).join('') : '<div class="empty">No circulars match. Clear the search or pick another filter.</div>';
+    var rows = C.filter(function (c) { return (state.lv === 'all' || c.lv === state.lv) && (!q || (c.title + ' ' + c.aud).toLowerCase().indexOf(q) >= 0); });
+    $('rows').innerHTML = rows.length ? rows.map(function (c) {
+      return '<tr><td class="date">' + fmt(c.date, true) + '</td><td class="title"><a href="' + esc(c.link) + '" target="_blank" rel="noopener">' + esc(c.title) + '</a>' +
+        (c.pdf ? '<a class="pdf" href="' + esc(c.pdf) + '" target="_blank" rel="noopener">PDF</a>' : '') + '</td><td><span class="badge ' + c.lv + '">' + LV[c.lv] + '</span></td><td>' + esc(c.aud) + '</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="empty">No circulars match. Clear the search or pick another filter.</td></tr>';
   }
-  $('chips').addEventListener('click', function (e) {
-    var b = e.target.closest('.chip'); if (!b) return;
-    state.lv = b.dataset.lv; try { localStorage.setItem('tracker-filter', state.lv); } catch (err) {}
-    drawChips(); drawList();
-  });
-  $('q').addEventListener('input', function (e) { state.q = e.target.value; drawList(); });
-  strip.addEventListener('click', function (e) {
-    var b = e.target.closest('.dot'); if (!b) return;
-    state.lv = 'all'; state.q = ''; $('q').value = ''; drawChips(); drawList();
-    var el = $('c' + b.dataset.id); if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash');
-    setTimeout(function () { el.classList.remove('flash'); }, 1600);
-  });
-  if (!chipsDef.some(function (c) { return c[0] === state.lv; })) state.lv = 'all';
-  drawChips(); drawList();
+  $('chips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; state.lv = b.dataset.lv; drawChips(); drawRows(); });
+  $('q').addEventListener('input', function (e) { state.q = e.target.value; drawRows(); });
+  drawChips(); drawRows();
+  $('foot').textContent = 'Source: Reserve Bank of India notifications (rbi.org.in), ' + period + '.';
 
-  var fromListing = C.filter(function (c) { return c.source !== 'feed'; }).length;
-  $('srcnote').textContent = 'Sources: RBI Notifications RSS (' + D.feedIds.length + ' items) and the Notifications listing page' + (fromListing ? '; ' + fromListing + ' older circular' + (fromListing > 1 ? 's were' : ' was') + ' fetched from the listing because the feed keeps only the latest 10.' : '.');
+  // ---------- Email ----------
+  var subject = 'RBI circulars: ' + period;
+  function emailHtml(note) {
+    var cell = 'padding:8px 10px;border-bottom:1px solid #e3e7ec;font:14px Arial,sans-serif;vertical-align:top';
+    var lvColor = { act: '#b42318', look: '#94560a', low: '#34648f', none: '#6b7684' };
+    return (note ? '<p style="font:14px Arial,sans-serif">' + esc(note).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<h2 style="font:600 18px Arial,sans-serif;margin:0 0 6px">RBI circulars, ' + esc(period) + '</h2>' +
+      '<p style="font:14px Arial,sans-serif;margin:0 0 14px">' + answer + '</p>' +
+      '<p style="font:14px Arial,sans-serif;margin:0 0 14px"><b>' + C.length + '</b> issued · <b>' + count.act + '</b> need action · <b>' + count.look + '</b> for our teams’ attention · <b>' + (count.low + count.none) + '</b> not applicable</p>' +
+      (attn.length ? '<h3 style="font:600 15px Arial,sans-serif;margin:16px 0 6px">For our attention</h3><ul style="font:14px Arial,sans-serif;padding-left:18px;margin:0 0 14px">' +
+        attn.map(function (c) { return '<li style="margin-bottom:6px"><a href="' + esc(c.link) + '">' + esc(c.title) + '</a> (' + fmt(c.date) + ')<br><span style="color:#5b6878">' + esc(meaning(c)) + '</span></li>'; }).join('') + '</ul>' : '') +
+      '<h3 style="font:600 15px Arial,sans-serif;margin:16px 0 6px">All circulars</h3><table style="border-collapse:collapse;width:100%"><tr>' +
+      ['Date', 'Circular', 'Relevance', 'Applies to'].map(function (h) { return '<th style="' + cell + ';text-align:left;color:#5b6878;font-size:12px">' + h + '</th>'; }).join('') + '</tr>' +
+      C.map(function (c) { return '<tr><td style="' + cell + ';white-space:nowrap">' + fmt(c.date) + '</td><td style="' + cell + '"><a href="' + esc(c.link) + '">' + esc(c.title) + '</a></td><td style="' + cell + ';color:' + lvColor[c.lv] + ';white-space:nowrap">' + LV[c.lv] + '</td><td style="' + cell + '">' + esc(c.aud) + '</td></tr>'; }).join('') +
+      '</table><p style="font:12px Arial,sans-serif;color:#5b6878;margin-top:14px">Source: Reserve Bank of India notifications (rbi.org.in), as of ' + esc(asOf) + '.</p>';
+  }
+  function emailText(note) {
+    return (note ? note + '\n\n' : '') + 'RBI circulars, ' + period + '\n\n' + summaryText + '\n\n' +
+      C.length + ' issued, ' + count.act + ' need action, ' + count.look + " for our teams' attention, " + (count.low + count.none) + ' not applicable.\n' +
+      (attn.length ? '\nFor our attention:\n' + attn.map(function (c) { return '- ' + c.title + ' (' + fmt(c.date) + ')\n  ' + meaning(c) + '\n  ' + c.link; }).join('\n') + '\n' : '') +
+      '\nAll circulars:\n' + C.map(function (c) { return '- ' + fmt(c.date) + ' | ' + LV[c.lv] + ' | ' + c.title; }).join('\n') +
+      '\n\nSource: Reserve Bank of India notifications (rbi.org.in), as of ' + asOf + '.';
+  }
+
+  var dlg = $('dlg'), status = $('dlgStatus'), mcp = null, hostKnown = false;
+  $('emSubj').value = subject;
+  function setStatus(kind, html) { status.hidden = !html; status.className = 'status' + (kind ? ' ' + kind : ''); status.innerHTML = html || ''; }
+  function setMode() {
+    if (mcp) {
+      $('sendBtn').textContent = 'Create Gmail draft';
+      $('dlgHint').textContent = 'Creates a draft in your Gmail with the summary, the items for our attention and the full list. Review it in Gmail, then press Send.';
+    } else {
+      $('sendBtn').textContent = 'Open in email app';
+      $('dlgHint').textContent = hostKnown ? 'Gmail drafts are not available in this view. Open the message in your email app, or copy the summary and paste it into an email.' : 'Open the message in your email app, or copy the summary and paste it into an email.';
+    }
+  }
+  setMode();
+  if (window.claude && window.claude.use) {
+    hostKnown = true;
+    window.claude.use('mcp').then(function (m) { mcp = m; setMode(); }).catch(function () { setMode(); });
+  }
+
+  $('emailBtn').addEventListener('click', function () { setStatus('', ''); $('sendBtn').disabled = false; if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); $('emTo').focus(); });
+  $('closeBtn').addEventListener('click', function () { dlg.close ? dlg.close() : dlg.removeAttribute('open'); });
+
+  function recipients() {
+    var list = $('emTo').value.split(/[,;\s]+/).filter(Boolean);
+    var bad = list.filter(function (a) { return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a); });
+    return { list: list, bad: bad };
+  }
+
+  $('dlgForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var r = recipients();
+    if (!r.list.length) { setStatus('err', 'Enter at least one email address.'); return; }
+    if (r.bad.length) { setStatus('err', 'Check this address: ' + esc(r.bad[0])); return; }
+    var note = $('emNote').value.trim(), subj = $('emSubj').value.trim() || subject;
+    if (!mcp) {
+      var href = 'mailto:' + r.list.map(encodeURIComponent).join(',') + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(emailText(note));
+      var a = document.createElement('a'); a.href = href; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
+      setStatus('', 'Your email app should open with the message. If nothing happened, use Copy summary and paste it into an email.');
+      return;
+    }
+    $('sendBtn').disabled = true; setStatus('', 'Creating the draft in Gmail…');
+    mcp.callTool('Gmail', 'create_draft', { to: r.list, subject: subj, htmlBody: emailHtml(note), body: emailText(note) }).then(function (res) {
+      var p = res && res.payload, url = p && (p.viewUrl || (p.draft && p.draft.viewUrl));
+      setStatus('ok', 'Draft created in your Gmail' + (url ? '. <a href="' + esc(url) + '" target="_blank" rel="noopener">Open the draft</a> to review and send.' : '. Open Gmail Drafts to review and send.'));
+      $('sendBtn').disabled = false; $('sendBtn').textContent = 'Create another draft';
+    }).catch(function (err) {
+      $('sendBtn').disabled = false;
+      var code = err && err.code;
+      var msg = {
+        approval_required: 'Gmail needs your approval for this page. Press Create Gmail draft again and choose Allow.',
+        not_in_manifest: 'Gmail is turned off for this page. Turn it on in the page’s Permissions menu, then try again.',
+        server_not_connected: 'Gmail is not connected. Add Gmail in claude.ai Settings → Connectors, then try again.',
+        selection_required: 'Choose which Gmail account to use when claude.ai asks, then try again.',
+        needs_reauth: 'Your Gmail connection has expired. Reconnect Gmail in claude.ai Settings → Connectors, then try again.',
+        blocked_by_policy: 'Your organization does not allow creating Gmail drafts from this page. Use Copy summary instead.',
+        tool_error: 'Gmail could not create the draft' + (err && err.message ? ': ' + esc(err.message) : '.'),
+        server_unavailable: 'Gmail did not answer. Check your Gmail Drafts before trying again, in case the draft was created.',
+        upstream_error: 'Gmail did not answer. Check your Gmail Drafts before trying again, in case the draft was created.',
+        not_granted: 'Gmail drafts are not available in this view. Use Copy summary instead.',
+        capability_disabled: 'Gmail drafts are not available in this view. Use Copy summary instead.'
+      }[code] || 'The draft could not be created. Use Copy summary and paste it into an email.';
+      setStatus('err', msg);
+    });
+  });
+
+  $('copyBtn').addEventListener('click', function () {
+    var text = emailText($('emNote').value.trim());
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (x) {}
+      ta.remove(); setStatus(ok ? 'ok' : 'err', ok ? 'Summary copied. Paste it into an email.' : 'Copy was blocked by the browser. Select the text on the page instead.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { setStatus('ok', 'Summary copied. Paste it into an email.'); }, fallback);
+    else fallback();
+  });
 })();
 </script>
 
