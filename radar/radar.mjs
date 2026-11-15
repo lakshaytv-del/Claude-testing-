@@ -4,14 +4,21 @@
 
 // ---------- Parsing ----------
 
-const decodeEntities = (s) =>
-  s
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&');
+const NAMED = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsquo: '\u2019', lsquo: '\u2018',
+  rdquo: '\u201d', ldquo: '\u201c', ndash: '\u2013', mdash: '\u2014', hellip: '\u2026', bull: '\u2022',
+  rsquor: '\u2019', laquo: '\u00ab', raquo: '\u00bb', middot: '\u00b7', deg: '\u00b0', rupee: '\u20b9',
+};
+
+// One pass, so "&amp;rsquo;" becomes "&rsquo;" (literal text), not a quote.
+export const decodeEntities = (s) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+    if (e[0] === '#') {
+      const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1));
+      return Number.isFinite(n) ? String.fromCodePoint(n) : m;
+    }
+    return NAMED[e.toLowerCase()] ?? m;
+  });
 
 function tagValue(block, tag) {
   const m = block.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i'));
@@ -52,23 +59,47 @@ export function htmlToText(html) {
     .trim();
 }
 
-// An addressee is a short line starting "All" that names an entity type,
-// e.g. "All Regulated Entities", "All authorised non-bank Payment System Operators".
-const ADDRESSEE_ENTITY_RE =
-  /Regulated Entities|\bREs\b|NBFCs?|Non-Banking Financial|Banks?\b|Payment System (Operators|Providers)|Authorised (Persons|Dealer)|Prepaid Payment Instrument|Financial Institutions|Credit Information Compan/i;
+const MONTH_RE = '(January|February|March|April|May|June|July|August|September|October|November|December)';
+const DATE_LINE_RE = new RegExp(`^${MONTH_RE} \\d{1,2}, \\d{4}$`);
+const SALUTATION_RE = /^(Madam|Dear Sir|Sir\/Madam)/i;
 
-function findAddressee(text) {
-  for (const line of text.split('\n')) {
-    const l = line.trim();
-    if (/^All\s/.test(l) && l.length <= 200 && ADDRESSEE_ENTITY_RE.test(l)) return l;
+/**
+ * The addressee is the block of lines between the circular's date line and the
+ * salutation ("Madam / Dear Sir"). It can span several lines and often starts
+ * "The Chairpersons/ CEOs of …". Amendment directions and FEMA notifications
+ * have no salutation, so they have no addressee.
+ */
+export function findAddressee(text) {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 25);
+  const d = lines.findIndex((l) => DATE_LINE_RE.test(l));
+  if (d < 0) return null;
+  const block = [];
+  for (const l of lines.slice(d + 1, d + 10)) {
+    if (SALUTATION_RE.test(l)) return block.length ? block.join(' ').replace(/\s+/g, ' ') : null;
+    block.push(l);
   }
   return null;
 }
 
+/** Date printed on the circular itself (can differ from the feed pubDate). */
+export function circularDate(text) {
+  const m = text.slice(0, 1500).match(new RegExp(`${MONTH_RE} (\\d{1,2}), (\\d{4})`));
+  if (!m) return null;
+  const mon = ['January','February','March','April','May','June','July','August','September','October','November','December'].indexOf(m[1]) + 1;
+  return `${m[3]}-${String(mon).padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+}
+
+// RBI ref sits in the header: "RBI/2026-27/303" or "RBI/DPSS/2026-27/476".
+// Only the first 300 chars are searched, so refs of older circulars cited in the body are ignored.
+const REF_RE = /RBI\/(?:[A-Z]+\/)?\d{4}-\d{2}\/\d+/;
+
 export function extractMeta(text) {
-  const ref = text.match(/RBI\/\d{4}-\d{2}\/\d+/)?.[0] ?? null;
-  const dept = text.match(/\b(DoR\.[A-Z]+|DPSS|FEMA|DCM|FMRD|DoS|CO\.DPSS|A\.P\. \(DIR Series\))/)?.[1] ?? null;
-  return { ref, dept, addressee: findAddressee(text) };
+  const head = text.slice(0, 300);
+  const ref = head.match(REF_RE)?.[0] ?? null;
+  const dept =
+    head.match(/^(?:CO\.)?(DoR|DOR|DPSS|FIDD|DCM|FMRD|DoS|FED|DOS)[.\w]*/m)?.[1]?.replace(/^DOR$/, 'DoR') ??
+    (/A\.P\. \(DIR Series\)/.test(head) ? 'A.P. (DIR Series)' : /Notification No\. FEMA/.test(head) ? 'FEMA' : null);
+  return { ref, dept, addressee: findAddressee(text), circularDate: circularDate(text) };
 }
 
 /** Parse RSS XML into items. Items with no parseable Id are dropped (logged by caller). */
@@ -122,9 +153,41 @@ const normTitle = (t) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-/** Backfill guard: store a fetched circular only if its title matches the listing row. */
-export function backfillTitleMatches(listingTitle, fetchedTitle) {
-  return normTitle(listingTitle) !== '' && normTitle(listingTitle) === normTitle(fetchedTitle);
+/**
+ * Backfill guard. Titles repeat (UAPA updates reuse the same title word for word),
+ * so a title match alone cannot confirm the page is the circular the listing row
+ * points to. Require the title AND the PDF link to match the listing row.
+ */
+export function backfillMatches(listingRow, fetched) {
+  if (!listingRow?.title || normTitle(listingRow.title) !== normTitle(fetched?.title)) return false;
+  if (!listingRow.pdf || !fetched.pdf) return false;
+  return listingRow.pdf.toLowerCase() === fetched.pdf.toLowerCase();
+}
+
+export const backfillTitleMatches = (a, b) => normTitle(a) !== '' && normTitle(a) === normTitle(b);
+
+const PDF_RE = /https?:\/\/rbidocs\.rbi\.org\.in\/rdocs\/notification\/PDFs\/[A-Za-z0-9]+\.PDF/i;
+
+/** Rows of the Notifications listing page: { rbiId, title, date, pdf }. */
+export function parseListing(html) {
+  const rows = [];
+  let date = null;
+  const re = /<td class="tableheader"[^>]*><b>([A-Z][a-z]{2} \d{2}, \d{4})<\/b>|<a class='link2' href=NotificationUser\.aspx\?Id=(\d+)[^>]*>([^<]+)<\/a>([\s\S]*?)<\/tr>/g;
+  for (const m of html.matchAll(re)) {
+    if (m[1]) { date = m[1]; continue; }
+    rows.push({ rbiId: Number(m[2]), title: decodeEntities(m[3]).trim(), date, pdf: m[4].match(PDF_RE)?.[0] ?? null });
+  }
+  return rows;
+}
+
+/** A single notification page (NotificationUser.aspx?Id=…): title, PDF, body text and its meta. */
+export function parseNotificationPage(html) {
+  const t = html.match(/<td[^>]*class="tableheader"[^>]*>(?:<[^>]+>)*([^<]{10,400})/g) || [];
+  const titles = t.map((x) => decodeEntities(x.replace(/<[^>]+>/g, '')).trim()).filter((x) => !/^Date\s*:/.test(x) && !/^[A-Z][a-z]{2} \d{2}, \d{4}$/.test(x));
+  const title = titles[0] ?? null;
+  const start = title ? html.indexOf('class="tableheader"') : 0;
+  const bodyText = htmlToText(html.slice(start)).split('\n').slice(1).join('\n');
+  return { title, pdf: html.match(PDF_RE)?.[0] ?? null, bodyText, ...extractMeta(bodyText) };
 }
 
 // ---------- Rubric ----------
@@ -151,8 +214,9 @@ function titleEntity(title) {
   return classifyScope(inner) === null ? null : inner;
 }
 
+/** The Applicability paragraph, not its entry in a table of contents. */
 function applicabilityPara(text) {
-  const m = text.match(/Applicability[\s\S]{0,800}/i);
+  const m = text.match(/Applicability\s*[.:\-]?\s*(These|This|The provisions)[^\n]{0,40}(applicable|apply)[\s\S]{0,800}/i);
   return m ? m[0] : null;
 }
 

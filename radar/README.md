@@ -3,22 +3,24 @@
 This folder holds the Radar's feed handling and rule-based scoring, written as plain Node with no dependencies. It makes no network or Claude API calls. Those parts come in the weekend 2 build.
 
 ```
-npm test        # or: node --test radar.test.mjs
+npm test                                   # 15 tests on saved RBI snapshots
+NODE_USE_ENV_PROXY=1 node live-check.mjs   # fetch rbi.org.in now and score today's feed
 ```
+
+`NODE_USE_ENV_PROXY=1` is only needed behind an HTTPS proxy (Node 22.21+).
 
 | File | What it holds |
 | --- | --- |
-| `radar.mjs` | Feed parser, Id extraction, IST dates, dedupe, Id gap check, backfill title guard, scoring rubric (applicability × topic × severity), hard rules, model/code score reconcile, cite checker |
-| `fixture.mjs` | The 10 items in RBI's Notifications RSS on 14 Nov 2026 (Ids 13743–13752), plus two positive controls |
-| `radar.test.mjs` | 13 tests (`node:test`) |
+| `radar.mjs` | Feed parser, Id extraction, IST dates, addressee block, ref and date, dedupe, Id gap check, listing and notification page parsers, backfill guard (title + PDF link), scoring rubric, hard rules, model/code score reconcile, cite checker |
+| `fixture.mjs` | Loads the saved snapshots; one synthetic test circular that must alert |
+| `fixtures/` | Real pages from rbi.org.in, 15 Nov 2026: RSS feed, listing page, notifications 13742, 13748, 12848 |
+| `radar.test.mjs` | 15 tests (`node:test`) |
+| `live-check.mjs` | Live run: fetch, parse, check Ids against the listing, score |
+| `report/radar-test-run.html` | HTML report of the last run |
 
-## How the fixture was built
+## Findings from the live site (15 Nov 2026)
 
-The fixture was not built from a saved copy of the feed. It was put together from the facts the build spec recorded on 14 Nov 2026:
-
-- Id range and dates
-- the Domestic Money Transfer title and timestamp
-- the 17:30 / 17:10 times that are out of Id order
-- 3 UAPA updates, 1 cyber Master Direction for payment operators, 3 items with no addressee line
-
-Other titles and the body text are stand-ins written to match those facts. Each item's `provenance` field says which is which. Swap in a real feed snapshot once rbi.org.in can be reached.
+- The addressee is a multi-line block between the date and the salutation, not one line starting "All".
+- Reference numbers can include a department code: `RBI/DPSS/2026-27/476`.
+- UAPA sanctions updates reuse titles word for word, so backfill has to match the PDF link as well as the title.
+- The listing page reaches only 3 Ids below the feed. A larger gap needs the month archive.
