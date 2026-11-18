@@ -1,0 +1,12 @@
+{
+  "name": "tarang-paper-broker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Paper-trading stock broking app: simulated NSE feed, order matching, margin, Indian charges, positions and holdings.",
+  "scripts": {
+    "test": "node --test engine.test.mjs",
+    "serve": "python3 -m http.server 8080"
+  },
+  "engines": { "node": ">=20" }
+}
